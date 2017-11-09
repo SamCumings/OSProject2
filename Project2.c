@@ -31,14 +31,12 @@ int main(int argc, char *argv[]){
     }
     for (cycle = 0;processes_finished<50;cycle++){
         if(cycle%50==0&&processes_started<50){ 
-            start_mal=clock();
             mem_size+=Processes[processes_started].mem_size;
-            printf("mem_size= %ld\n",mem_size);
+            start_mal=clock();
             Processes[processes_started].mem_loc=malloc(Processes[processes_started].mem_size);
 
-            Processes[processes_started].proc_num=processes_started;
-            *Processes[processes_started].mem_loc='a';
             end_mal=clock();
+            Processes[processes_started].proc_num=processes_started;
             total_time+=end_mal-start_mal;
             Processes[processes_started].end_time=cycle+Processes[processes_started].run_time;
             processes_started++;
