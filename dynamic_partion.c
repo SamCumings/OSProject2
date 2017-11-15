@@ -6,6 +6,9 @@
 #include <time.h>
 
 #define TOTAL_MEM 104857600
+#define SMALLEST_SIZE 10240
+#define LARGEST_SIZE 10485760
+#define NUM_PROC 50
 
 typedef struct Process Process;
 typedef struct Node Node;
@@ -27,6 +30,22 @@ void* my_alloc(size_t size);
 void my_free(void * ptr);
 double log2(double input);
 int size_level(size_t);
+int left(int i);
+int right(int i);
+int parent(int i);
+//binary tree functions (as array)
+int left(int i){
+    return 2*i + 1;
+}
+int right(int i){
+    return 2*i + 2;
+}
+int parent(int i){
+    return (i-1)/2;
+}
+//insert
+
+
 
 int size_level(size_t mem_size){
     double level_exact = log2((double) mem_size);
@@ -50,10 +69,9 @@ int main(int argc, char *argv[]){
     int processes_started = 0;
     int processes_finished=0;
     long mem_size=0;
-//10000 , 2e+6
     Process Processes[50];
     int i=0;
-    
+    printf("sizeof: %ld",SMALLEST_SIZE*(long)sizeof(Node));
     size_t total_mem = TOTAL_MEM;
 
     void * start_of_mem = NULL;
@@ -64,7 +82,7 @@ int main(int argc, char *argv[]){
     for(i=0;i<50;i++){
         Processes[i].run_time=(rand()%(2500-200)+200);
         printf("Process_time: %d\n",Processes[i].run_time);
-        Processes[i].mem_size=(size_t)(rand()%(2000000-1000)+1000);    
+        Processes[i].mem_size=(size_t)(rand()%(LARGEST_SIZE-SMALLEST_SIZE)+SMALLEST_SIZE);    
         printf("Process_size: %ld\n",Processes[i].mem_size);
         Processes[i].end_time=-1;
     }
