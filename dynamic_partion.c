@@ -9,6 +9,8 @@
 #define SMALLEST_SIZE 10240
 #define LARGEST_SIZE 10485760
 #define NUM_PROC 50
+#define max(a, b) (((a)>(b))?(a):(b))
+#define min(a, b) (((a)<(b))?(a):(b))
 
 typedef struct Process Process;
 typedef struct Node Node;
@@ -33,6 +35,9 @@ int size_level(size_t);
 int left(int i);
 int right(int i);
 int parent(int i);
+bool power_of_2(int i);
+size_t next_power_of_2(size_t size);
+
 //binary tree functions (as array)
 int left(int i){
     return 2*i + 1;
@@ -43,8 +48,22 @@ int right(int i){
 int parent(int i){
     return (i-1)/2;
 }
-//insert
-
+//in bits if i is power of 2 then it is 10000000 so -1 is 0111111111 so bitwise and will always produce 0.
+bool power_of_2(int i){
+    return !(i& (i- 1)); 
+}
+// get the next power of 2
+size_t next_power_of_2(size_t size){
+    size--;
+    size |= size >> 1;
+    size |= size >> 2;
+    size |= size >> 4;
+    size |= size >> 8;
+    size |= size >> 16;
+    size++;
+    return size;
+    
+}
 
 
 int size_level(size_t mem_size){
@@ -75,8 +94,12 @@ int main(int argc, char *argv[]){
     size_t total_mem = TOTAL_MEM;
 
     void * start_of_mem = NULL;
-
+    char * start_of_meta = NULL;
     start_of_mem = malloc(total_mem);
+    start_of_meta=start_of_mem;
+    
+    //80mb = 83886080 bytes
+    //491520 total size of meta structure
 
     srand(30);
     for(i=0;i<50;i++){
