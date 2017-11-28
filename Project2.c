@@ -3,7 +3,7 @@
 #include <sys/types.h>
 #include <time.h>
 #define SMALLEST_SIZE 10240
-#define LARGEST_SIZE 10485760
+#define LARGEST_SIZE 2097152
 #define MEM_SIZE 104857600
 #define NUM_PROC 50
 typedef struct Process Process;

@@ -4,10 +4,12 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <time.h>
-
+//100MB
 #define TOTAL_MEM 104857600
+//10KB
 #define SMALLEST_SIZE 10240
-#define LARGEST_SIZE 10485760
+//2MB
+#define LARGEST_SIZE 2097152
 #define NUM_PROC 50
 #define max(a, b) (((a)>(b))?(a):(b))
 #define min(a, b) (((a)<(b))?(a):(b))
@@ -35,7 +37,7 @@ int size_level(size_t);
 int left(int i);
 int right(int i);
 int parent(int i);
-bool power_of_2(int i);
+int power_of_2(int i);
 size_t next_power_of_2(size_t size);
 
 //binary tree functions (as array)
@@ -49,7 +51,7 @@ int parent(int i){
     return (i-1)/2;
 }
 //in bits if i is power of 2 then it is 10000000 so -1 is 0111111111 so bitwise and will always produce 0.
-bool power_of_2(int i){
+int power_of_2(int i){
     return !(i& (i- 1)); 
 }
 // get the next power of 2
@@ -64,6 +66,7 @@ size_t next_power_of_2(size_t size){
     return size;
     
 }
+
 
 
 int size_level(size_t mem_size){
@@ -90,7 +93,7 @@ int main(int argc, char *argv[]){
     long mem_size=0;
     Process Processes[50];
     int i=0;
-    printf("sizeof: %ld",SMALLEST_SIZE*(long)sizeof(Node));
+    printf("sizeof: %ld\n",SMALLEST_SIZE*(long)sizeof(Node));
     size_t total_mem = TOTAL_MEM;
 
     void * start_of_mem = NULL;
@@ -101,19 +104,38 @@ int main(int argc, char *argv[]){
     //80mb = 83886080 bytes
     //491520 total size of meta structure
 
+    //test space
+
+    printf("power of 2 test %d: %d\n",32,power_of_2(32));
+    
+    printf("power of 2 test %d: %d\n",33,power_of_2(33));
+    
+    printf("next power of 2 test %d: %ld\n",24,(long)next_power_of_2(24));
+
+    printf("next power of 2 test %d: %ld\n",32,(long)next_power_of_2(32));
+
+    printf("next power of 2 test %d: %ld\n",31048576,(long)next_power_of_2(31048576));
+
+    printf("power of 2 test %d: %d\n",31048576,power_of_2(31048576));
+
+    printf("power of 2 test %d: %d\n",33554432,power_of_2(33554432));
+    
+
+    printf("power of 2 test %d: %d\n",10240,power_of_2(10240));
+
     srand(30);
     for(i=0;i<50;i++){
         Processes[i].run_time=(rand()%(2500-200)+200);
-        printf("Process_time: %d\n",Processes[i].run_time);
+        //printf("Process_time: %d\n",Processes[i].run_time);
         Processes[i].mem_size=(size_t)(rand()%(LARGEST_SIZE-SMALLEST_SIZE)+SMALLEST_SIZE);    
-        printf("Process_size: %ld\n",Processes[i].mem_size);
+        //printf("Process_size: %ld\n",Processes[i].mem_size);
         Processes[i].end_time=-1;
     }
     for (cycle = 0;processes_finished<50;cycle++){
         if(cycle%50==0&&processes_started<50){ 
             start_mal=clock();
             mem_size+=Processes[processes_started].mem_size;
-            printf("mem_size= %ld\n",mem_size);
+           //printf("mem_size= %ld\n",mem_size);
             Processes[processes_started].mem_loc=malloc(Processes[processes_started].mem_size);
 
             Processes[processes_started].proc_num=processes_started;
@@ -126,15 +148,15 @@ int main(int argc, char *argv[]){
         //need to make more efficient
         for(i=0;i<50;i++){
             if(Processes[i].end_time==cycle){
-                printf("i= %d\n",i);
-                printf("end_time= %d\n",Processes[i].end_time);
-                printf("cycle %d\n",cycle);
+                //printf("i= %d\n",i);
+                //printf("end_time= %d\n",Processes[i].end_time);
+                //printf("cycle %d\n",cycle);
                 start_free=clock();
                 free(Processes[i].mem_loc);
                 end_free=clock();
                 total_time+=end_free-start_free;
                 processes_finished++;
-                printf("processes_finished= %d\n",processes_finished);
+                //printf("processes_finished= %d\n",processes_finished);
             }
         }
     }
