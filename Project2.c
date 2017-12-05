@@ -16,7 +16,7 @@ struct Process{
 };
 
 int main(int argc, char *argv[]){
-    clock_t start_mal,end_mal,start_free,end_free,total_time=0;
+    clock_t start_mal,end_mal,start_free,end_free,total_time=0,alloc_time=0,free_time=0;
     int cycle = 0;
     int processes_started = 0;
     int processes_finished=0;
@@ -41,7 +41,7 @@ int main(int argc, char *argv[]){
 
             end_mal=clock();
             Processes[processes_started].proc_num=processes_started;
-            total_time+=end_mal-start_mal;
+            alloc_time+=end_mal-start_mal;
             Processes[processes_started].end_time=cycle+Processes[processes_started].run_time;
             processes_started++;
         }
@@ -54,12 +54,14 @@ int main(int argc, char *argv[]){
                 start_free=clock();
                 free(Processes[i].mem_loc);
                 end_free=clock();
-                total_time+=end_free-start_free;
+                free_time+=end_free-start_free;
                 processes_finished++;
                 printf("processes_finished= %d\n",processes_finished);
             }
         }
     }
-    printf("Time: %ld\n",total_time);
+    
+    total_time= free_time+alloc_time;
+    printf("Total_Time: %ld, Alloc: %ld, Free: %ld\n",total_time,alloc_time,free_time);
     return 0;
 }
