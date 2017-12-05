@@ -4,21 +4,27 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <time.h>
-//100MB
+//100MB = 104857600
+//168MB = 176160768
 #define TOTAL_MEM 104857600
-//10KB
+//10KB = 10240
+//16KB = 16384
 #define SMALLEST_SIZE 10240
 //2MB
 #define LARGEST_SIZE 2097152
 #define NUM_PROC 50
+
+#define NUM_SMALLEST_PAR TOTAL_MEM/SMALLEST_SIZE
 #define max(a, b) (((a)>(b))?(a):(b))
 #define min(a, b) (((a)<(b))?(a):(b))
 
 char * g_tot_memory;
 
+
 typedef struct Process Process;
 typedef struct Node Node;
 typedef struct Free_Node Free_Node;
+typedef struct LLNode LLNode;
 struct Process{
     int proc_num;
     int run_time;
@@ -33,11 +39,20 @@ struct Node{
 };
 
 struct Free_Node{
-    int level;
     int free;
+    int split;
+    int used;
+    char * mem_loc;
     Free_Node * Left;
     Free_Node * Right;
 };
+struct LLNode{
+    int free;
+    int l_index;
+    int r_index;
+};
+LLNode link_array[NUM_SMALLEST_PAR*2-1];
+Free_Node meta_array[NUM_SMALLEST_PAR*2-1];
 
 void* my_alloc(size_t size);
 
@@ -49,6 +64,7 @@ int right(int i);
 int parent(int i);
 int power_of_2(int i);
 size_t next_power_of_2(size_t size);
+int get_level(size_t size);
 
 //binary tree functions (as array)
 int left(int i){
@@ -64,7 +80,10 @@ int parent(int i){
 int power_of_2(int i){
     return !(i& (i- 1)); 
 }
-// get the next power of 2
+
+    
+
+// get the next power of 2 
 size_t next_power_of_2(size_t size){
     size--;
     size |= size >> 1;
@@ -76,12 +95,84 @@ size_t next_power_of_2(size_t size){
     return size;
     
 }
+
+void insert_link(int level,int index){
+    int level_index=(1<<level)-1;
+    int temp;
+    if(link_array[level_index].l_index==link_array[level_index].l_index){
+        link_array[level_index].l_index=index;
+        link_array[level_index].r_index=index;
+        link_array[index].l_index=level_index;
+        link_array[index].r_index=level_index;
+    } else {
+        //fix left
+        temp=link_array[level_index].l_index;
+        link_array[level_index].l_index=index;
+        link_array[temp].r_index=index;
+        link_array[index].l_index=temp;
+        //fix right
+        link_array[temp].r_index=index;
+        link_array[index].r_index=level_index;
+    }
+
+}
+// 168mb / 16 kb = 10752 bytes
 void*  my_alloc(size_t size){
     size_t alloc_size = size;
+    int level_index = 0;
+    int level=0;
+    int i;
+    int index=0;
+    int temp_level=0;
     if(!power_of_2(size))
         alloc_size=next_power_of_2(size);
+    level_index = (TOTAL_MEM / alloc_size) - 1; 
+    level=floor(log2(level_index+1));
     
+    //check if there is a free list there
+    for(index=level_index,temp_level=level;;){
+        int start = index;
+        //if you find a good spot on this level use it.
+        if(link_array[index].free && TOTAL_MEM/(1<<temp_level)==alloc_size){
+            link_array[index].free=0;
+            meta_array[index].used=1;
+            meta_array[index].free=0;
+            break;
+        }else if(link_array[index].r_index==start){
+            //none good on this level
+            temp_level--;
+            index=(1<<temp_level)-1;
+            start=index;
+        }else{
+            index=link_array[index].r_index;
+        }
+        if(link_array[index].free && TOTAL_MEM/(1<<temp_level)>alloc_size){
+            //split
+            link_array[index].free=0;
+            insert_link(level+1,left(index));
+            insert_link(level+1,right(index));
+            index=left(index);
+            start=index;
+            temp_level++;
+        }
+    }
 
+    for(index=level_index;i<=level_index*2;i++){
+        if(!meta_array[index].used){
+                    
+            break;
+        }
+    }
+    
+    for(i=0;i<level;i++){
+        if(meta_array[index].free){
+            if(alloc_size==(TOTAL_MEM/1<<index)){
+                
+            }
+        }
+    }
+
+    return NULL;
 }
 
 void my_free(void * ptr){
@@ -96,13 +187,6 @@ double log2(double input){
     return log(input)/log(2);
 }
 
-void * my_alloc(size_t size){
-
-    return NULL;
-}
-void my_free(void * ptr){
-
-}
 
 int main(int argc, char *argv[]){
     clock_t start_mal,end_mal,start_free,end_free,total_time=0;
@@ -110,6 +194,7 @@ int main(int argc, char *argv[]){
     int processes_started = 0;
     int processes_finished=0;
     long mem_size=0;
+    long num_smallest_par=0;
     Process Processes[50];
     int i=0;
     printf("sizeof: %ld\n",SMALLEST_SIZE*(long)sizeof(Node));
@@ -118,12 +203,31 @@ int main(int argc, char *argv[]){
     char * start_of_mem = NULL;
     char * start_of_meta = NULL;
 
+    int split;
+    int unused;
     //memory alloc
     start_of_mem = malloc(total_mem);
 
     g_tot_memory=start_of_mem;
 
     start_of_meta=start_of_mem;
+    
+    link_array[0].free=1;
+    link_array[0].l_index= 0;
+    link_array[0].r_index= 0;
+    meta_array[0].free=1;
+    meta_array[0].split=0;
+    meta_array[0].used=0;
+    for(i=1;i<num_smallest_par*2-1;i++){
+        
+        link_array[i].free=0;
+        link_array[i].l_index= i;
+        link_array[i].r_index= i;
+
+        meta_array[i].free=0;
+        meta_array[i].split=0;
+        meta_array[i].used=0;
+    }
     
     //80mb = 83886080 bytes
     //491520 total size of meta structure
