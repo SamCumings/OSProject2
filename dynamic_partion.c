@@ -5,11 +5,11 @@
 #include <sys/types.h>
 #include <time.h>
 //100MB = 104857600
-//168MB = 176160768
-#define TOTAL_MEM 104857600
+//128MB = 134217728 
+#define TOTAL_MEM 134217728
 //10KB = 10240
 //16KB = 16384
-#define SMALLEST_SIZE 10240
+#define SMALLEST_SIZE 16384 
 //2MB
 #define LARGEST_SIZE 2097152
 #define NUM_PROC 50
@@ -48,6 +48,7 @@ struct Free_Node{
 };
 struct LLNode{
     int free;
+    char * position;
     int l_index;
     int r_index;
 };
@@ -99,16 +100,16 @@ size_t next_power_of_2(size_t size){
 void insert_link(int level,int index){
     int level_index=(1<<level)-1;
     int temp;
-    if(link_array[level_index].l_index==link_array[level_index].l_index){
+    printf("inside split level: %d,index %d\n",level,index);
+    if(link_array[level_index].l_index==link_array[level_index].r_index==level_index){
         link_array[level_index].l_index=index;
         link_array[level_index].r_index=index;
-        link_array[index].l_index=level_index;
-        link_array[index].r_index=level_index;
+        //link_array[index].l_index=level_index;
+        //link_array[index].r_index=level_index;
     } else {
         //fix left
         temp=link_array[level_index].l_index;
         link_array[level_index].l_index=index;
-        link_array[temp].r_index=index;
         link_array[index].l_index=temp;
         //fix right
         link_array[temp].r_index=index;
@@ -118,22 +119,31 @@ void insert_link(int level,int index){
 }
 // 168mb / 16 kb = 10752 bytes
 void*  my_alloc(size_t size){
+    //printf("allocing \n");
     size_t alloc_size = size;
     int level_index = 0;
     int level=0;
     int i;
     int index=0;
     int temp_level=0;
+    
+    printf("allocing %ld\n",size);
+    
     if(!power_of_2(size))
         alloc_size=next_power_of_2(size);
-    level_index = (TOTAL_MEM / alloc_size) - 1; 
+    level_index = (TOTAL_MEM / alloc_size) - 1;
+
+    printf("power of two %d\n",power_of_2(TOTAL_MEM / alloc_size));
+
     level=floor(log2(level_index+1));
-    
+    printf("power of two alloc_size= %ld\n",alloc_size); 
+    int start = index=level_index;
     //check if there is a free list there
     for(index=level_index,temp_level=level;;){
-        int start = index;
         //if you find a good spot on this level use it.
+        printf("alloc_size: %ld, attempt size: %d\n",alloc_size,TOTAL_MEM/(1<<temp_level)); 
         if(link_array[index].free && TOTAL_MEM/(1<<temp_level)==alloc_size){
+            printf("index= %d\n",index);
             link_array[index].free=0;
             meta_array[index].used=1;
             meta_array[index].free=0;
@@ -143,39 +153,37 @@ void*  my_alloc(size_t size){
             temp_level--;
             index=(1<<temp_level)-1;
             start=index;
+            printf("none good on this level index= %d\n",index);
         }else{
+            printf("1    go to next link index= %d\n",index);
             index=link_array[index].r_index;
+            printf("2 go to next link index= %d\n",index);
         }
         if(link_array[index].free && TOTAL_MEM/(1<<temp_level)>alloc_size){
             //split
             link_array[index].free=0;
-            insert_link(level+1,left(index));
-            insert_link(level+1,right(index));
+            insert_link(temp_level+1,left(index));
+            insert_link(temp_level+1,right(index));
+            link_array[left(index)].free=1;
+            link_array[right(index)].free=1;
             index=left(index);
             start=index;
             temp_level++;
-        }
-    }
 
-    for(index=level_index;i<=level_index*2;i++){
-        if(!meta_array[index].used){
-                    
-            break;
+            printf("split index= %d\n",index);
         }
     }
-    
-    for(i=0;i<level;i++){
-        if(meta_array[index].free){
-            if(alloc_size==(TOTAL_MEM/1<<index)){
-                
-            }
-        }
-    }
-
-    return NULL;
+    //use index and temp_level to determine where in memory this is
+    printf("done with an alloc\n");
+    return  link_array[index].position=g_tot_memory+(TOTAL_MEM/(1<<temp_level)*(index-((1<<temp_level)-1)));
 }
 
 void my_free(void * ptr){
+    //stuff for free
+    char * start = g_tot_memory;
+    char * part_start = ptr - start;
+
+     
 
 }
 
@@ -189,12 +197,12 @@ double log2(double input){
 
 
 int main(int argc, char *argv[]){
+    printf("test\n");
     clock_t start_mal,end_mal,start_free,end_free,total_time=0;
     int cycle = 0;
     int processes_started = 0;
     int processes_finished=0;
     long mem_size=0;
-    long num_smallest_par=0;
     Process Processes[50];
     int i=0;
     printf("sizeof: %ld\n",SMALLEST_SIZE*(long)sizeof(Node));
@@ -218,8 +226,8 @@ int main(int argc, char *argv[]){
     meta_array[0].free=1;
     meta_array[0].split=0;
     meta_array[0].used=0;
-    for(i=1;i<num_smallest_par*2-1;i++){
-        
+    for(i=1;i<NUM_SMALLEST_PAR*2-1;i++){
+        //printf("in loop for init\n");    
         link_array[i].free=0;
         link_array[i].l_index= i;
         link_array[i].r_index= i;
@@ -228,12 +236,13 @@ int main(int argc, char *argv[]){
         meta_array[i].split=0;
         meta_array[i].used=0;
     }
+    printf("out of loop for init\n");
     
     //80mb = 83886080 bytes
     //491520 total size of meta structure
 
     //test space
-
+/*
     printf("power of 2 test %d: %d\n",32,power_of_2(32));
     
     printf("power of 2 test %d: %d\n",33,power_of_2(33));
@@ -255,11 +264,11 @@ int main(int argc, char *argv[]){
     printf("next power of 2 test %d: %zu\n",2097152,next_power_of_2(2097152));
 
     printf("power of 2 test %d: %d\n",2097152,power_of_2(2097152));
+*/
 
 
 
-
-    srand(30);
+    srand(42);
     for(i=0;i<50;i++){
         Processes[i].run_time=(rand()%(2500-200)+200);
         //printf("Process_time: %d\n",Processes[i].run_time);
@@ -271,9 +280,9 @@ int main(int argc, char *argv[]){
         if(cycle%50==0&&processes_started<50){ 
             start_mal=clock();
             mem_size+=Processes[processes_started].mem_size;
-           //printf("mem_size= %ld\n",mem_size);
+            printf("mem_size= %ld\n",mem_size);
             Processes[processes_started].mem_loc=my_alloc(Processes[processes_started].mem_size);
-
+            printf("do we get here?\n");
             Processes[processes_started].proc_num=processes_started;
             *Processes[processes_started].mem_loc='a';
             end_mal=clock();
