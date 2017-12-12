@@ -48,6 +48,7 @@ struct Free_Node{
 };
 struct LLNode{
     int free;
+    int assigned;
     char * position;
     int l_index;
     int r_index;
@@ -147,6 +148,8 @@ void*  my_alloc(size_t size){
             link_array[index].free=0;
             meta_array[index].used=1;
             meta_array[index].free=0;
+
+            link_array[index].assigned=1;
             break;
         }else if(link_array[index].r_index==start){
             //none good on this level
@@ -181,8 +184,9 @@ void*  my_alloc(size_t size){
 void my_free(void * ptr){
     //stuff for free
     char * start = g_tot_memory;
-    char * part_start = ptr - start;
-
+    char * ptr1 =  ptr;
+    char * part_start = ptr1 - start;
+    
      
 
 }
@@ -221,6 +225,7 @@ int main(int argc, char *argv[]){
     start_of_meta=start_of_mem;
     
     link_array[0].free=1;
+    link_array[0].assigned=0;
     link_array[0].l_index= 0;
     link_array[0].r_index= 0;
     meta_array[0].free=1;
@@ -231,6 +236,7 @@ int main(int argc, char *argv[]){
         link_array[i].free=0;
         link_array[i].l_index= i;
         link_array[i].r_index= i;
+        link_array[0].assigned=0;
 
         meta_array[i].free=0;
         meta_array[i].split=0;
