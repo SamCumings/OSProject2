@@ -338,7 +338,7 @@ int main(int argc, char *argv[]){
                 //printf("i= %d\n",i);
                 //printf("end_time= %d\n",Processes[i].end_time);
                 //printf("cycle %d\n",cycle);
-                printf("mem loc= %p\n",(void*)&Processes[i].mem_loc);
+                printf("mem free size= %ld\n",Processes[i].mem_size);
                 start_free=clock();
                 my_free(Processes[i].mem_loc);
                 end_free=clock();

@@ -2,9 +2,9 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <time.h>
-#define SMALLEST_SIZE 10240
+#define SMALLEST_SIZE 16384 
 #define LARGEST_SIZE 2097152
-#define MEM_SIZE 104857600
+#define MEM_SIZE 134217728 
 #define NUM_PROC 50
 typedef struct Process Process;
 struct Process{
