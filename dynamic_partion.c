@@ -67,7 +67,8 @@ int parent(int i);
 int power_of_2(int i);
 size_t next_power_of_2(size_t size);
 int get_level(size_t size);
-
+void remove_link(int index);
+void insert_link(int level,int index);
 //binary tree functions (as array)
 int left(int i){
     return 2*i + 1;
@@ -101,7 +102,7 @@ size_t next_power_of_2(size_t size){
 void insert_link(int level,int index){
     int level_index=(1<<level)-1;
     int temp;
-    printf("inside split level: %d,index %d\n",level,index);
+    //printf("inside split level: %d,index %d\n",level,index);
     if(link_array[level_index].l_index==link_array[level_index].r_index==level_index){
         link_array[level_index].l_index=index;
         link_array[level_index].r_index=index;
@@ -128,23 +129,23 @@ void*  my_alloc(size_t size){
     int index=0;
     int temp_level=0;
     
-    printf("allocing %ld\n",size);
+    //printf("allocing %ld\n",size);
     
     if(!power_of_2(size))
         alloc_size=next_power_of_2(size);
     level_index = (TOTAL_MEM / alloc_size) - 1;
 
-    printf("power of two %d\n",power_of_2(TOTAL_MEM / alloc_size));
+    //printf("power of two %d\n",power_of_2(TOTAL_MEM / alloc_size));
 
     level=floor(log2(level_index+1));
-    printf("power of two alloc_size= %ld\n",alloc_size); 
+    //printf("power of two alloc_size= %ld\n",alloc_size); 
     int start = index=level_index;
     //check if there is a free list there
     for(index=level_index,temp_level=level;;){
         //if you find a good spot on this level use it.
-        printf("alloc_size: %ld, attempt size: %d\n",alloc_size,TOTAL_MEM/(1<<temp_level)); 
+        //printf("alloc_size: %ld, attempt size: %d\n",alloc_size,TOTAL_MEM/(1<<temp_level)); 
         if(link_array[index].free && TOTAL_MEM/(1<<temp_level)==alloc_size){
-            printf("index= %d\n",index);
+            //printf("index= %d\n",index);
             link_array[index].free=0;
             meta_array[index].used=1;
             meta_array[index].free=0;
@@ -156,11 +157,11 @@ void*  my_alloc(size_t size){
             temp_level--;
             index=(1<<temp_level)-1;
             start=index;
-            printf("none good on this level index= %d\n",index);
+            //printf("none good on this level index= %d\n",index);
         }else{
-            printf("1    go to next link index= %d\n",index);
+            //printf("1    go to next link index= %d\n",index);
             index=link_array[index].r_index;
-            printf("2 go to next link index= %d\n",index);
+            //printf("2 go to next link index= %d\n",index);
         }
         if(link_array[index].free && TOTAL_MEM/(1<<temp_level)>alloc_size){
             //split
@@ -173,12 +174,30 @@ void*  my_alloc(size_t size){
             start=index;
             temp_level++;
 
-            printf("split index= %d\n",index);
+            //printf("split index= %d\n",index);
         }
     }
     //use index and temp_level to determine where in memory this is
-    printf("done with an alloc\n");
+    //printf("done with an alloc\n");
     return  link_array[index].position=g_tot_memory+(TOTAL_MEM/(1<<temp_level)*(index-((1<<temp_level)-1)));
+}
+
+//recursive free
+void unbuddy(int index){
+    //odd
+    if(index%2 && link_array[index+1].free){
+        link_array[index+1].free=0;
+        link_array[index].free=0;
+        link_array[parent(index)].free=1;
+        unbuddy(parent(index));
+    //even    
+    }else if(!index%2 && link_array[index-1].free){
+        link_array[index-1].free=0;
+        link_array[index].free=0;
+        link_array[parent(index)].free=1;
+        unbuddy(parent(index));
+
+    } else return;
 }
 
 void my_free(void * ptr){
@@ -186,9 +205,26 @@ void my_free(void * ptr){
     char * start = g_tot_memory;
     char * ptr1 =  ptr;
     char * part_start = ptr1 - start;
-    
+    int i =0;
+    for (i=0;i<(NUM_SMALLEST_PAR*2-1);i++){
+        if(link_array[i].assigned && ptr==link_array[i].position){
+
+            //printf("FOUND IT >>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
+            
+            link_array[i].assigned=0;
+            link_array[i].free=1;
+            
+            unbuddy(i);
+
+            return;
+        }
+    }
      
 
+}
+
+void remove_link(int index){
+    
 }
 
 int size_level(size_t mem_size){
@@ -209,7 +245,7 @@ int main(int argc, char *argv[]){
     long mem_size=0;
     Process Processes[50];
     int i=0;
-    printf("sizeof: %ld\n",SMALLEST_SIZE*(long)sizeof(Node));
+    //printf("sizeof: %ld\n",SMALLEST_SIZE*(long)sizeof(Node));
     size_t total_mem = TOTAL_MEM;
 
     char * start_of_mem = NULL;
@@ -284,11 +320,11 @@ int main(int argc, char *argv[]){
     }
     for (cycle = 0;processes_finished<50;cycle++){
         if(cycle%50==0&&processes_started<50){ 
+            printf("mem_size= %ld\n",mem_size);
             start_mal=clock();
             mem_size+=Processes[processes_started].mem_size;
-            printf("mem_size= %ld\n",mem_size);
             Processes[processes_started].mem_loc=my_alloc(Processes[processes_started].mem_size);
-            printf("do we get here?\n");
+            //printf("do we get here? %d\n",cycle);
             Processes[processes_started].proc_num=processes_started;
             *Processes[processes_started].mem_loc='a';
             end_mal=clock();
@@ -302,6 +338,7 @@ int main(int argc, char *argv[]){
                 //printf("i= %d\n",i);
                 //printf("end_time= %d\n",Processes[i].end_time);
                 //printf("cycle %d\n",cycle);
+                printf("mem loc= %p\n",(void*)&Processes[i].mem_loc);
                 start_free=clock();
                 my_free(Processes[i].mem_loc);
                 end_free=clock();
