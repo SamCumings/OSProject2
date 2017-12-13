@@ -238,7 +238,7 @@ double log2(double input){
 
 int main(int argc, char *argv[]){
     printf("test\n");
-    clock_t start_mal,end_mal,start_free,end_free,total_time=0;
+    clock_t start_mal,end_mal,start_free,end_free,free_time=0,alloc_time=0,total_time=0;
     int cycle = 0;
     int processes_started = 0;
     int processes_finished=0;
@@ -328,7 +328,7 @@ int main(int argc, char *argv[]){
             Processes[processes_started].proc_num=processes_started;
             *Processes[processes_started].mem_loc='a';
             end_mal=clock();
-            total_time+=end_mal-start_mal;
+            alloc_time+=end_mal-start_mal;
             Processes[processes_started].end_time=cycle+Processes[processes_started].run_time;
             processes_started++;
         }
@@ -342,12 +342,13 @@ int main(int argc, char *argv[]){
                 start_free=clock();
                 my_free(Processes[i].mem_loc);
                 end_free=clock();
-                total_time+=end_free-start_free;
+                free_time+=end_free-start_free;
                 processes_finished++;
                 //printf("processes_finished= %d\n",processes_finished);
             }
         }
     }
-    printf("Time: %ld\n",total_time);
+    total_time = alloc_time+free_time;
+    printf("Time: %ld, alloc: %ld, free: %ld \n",total_time,alloc_time,free_time);
     return 0;
 }
